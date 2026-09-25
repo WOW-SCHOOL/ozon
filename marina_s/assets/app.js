@@ -7,23 +7,27 @@
   const toast = document.getElementById('toast');
   const modal = document.getElementById('modal');
 
-  // Official destinations / fallbacks.
-  // Android package confirmed for the Ozon Bank app.
-  const ANDROID_PACKAGE = 'ru.ozon.fintech.finance';
   const BANK_WEB = 'https://finance.ozon.ru/';
-  const OZON_OFFICIAL_APP_LINK = 'https://s.ozon.ru/4KjFvD6';
-  const OZON_IOS_APP_LINK = 'https://s.ozon.ru/Uy5zkHT';
-  const IOS_SCHEME = 'ozonbank://'; // best-effort; fallback below is always available
+  const OZON_WEB = 'https://www.ozon.ru/';
+  const BANK_ANDROID_PACKAGE = 'ru.ozon.fintech.finance';
+  const OZON_ANDROID_PACKAGE = 'ru.ozon.app.android';
+  // Ozon Bank does not publish a documented public browser deeplink. This custom scheme
+  // is best-effort only; if the installed app does not expose it, the official bank site opens.
+  const BANK_CUSTOM_SCHEME = 'ozonbank';
+
+  const ua = navigator.userAgent || '';
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   function showToast(msg){
     if(!toast) return;
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(window.__toastTimer);
-    window.__toastTimer = setTimeout(()=>toast.classList.remove('show'),1650);
+    window.__toastTimer = setTimeout(()=>toast.classList.remove('show'),1450);
   }
 
-  async function copyCard(){
+  async function copyCard(showOwnToast=true){
     let ok = false;
     try{
       if(navigator.clipboard && window.isSecureContext){
@@ -39,90 +43,58 @@
       ta.style.left='-9999px';
       ta.style.opacity='0';
       document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
+      ta.focus(); ta.select();
       try{ ok = document.execCommand('copy'); }catch(e){}
       ta.remove();
     }
-    showToast(ok ? 'Номер карты скопирован' : 'Скопируйте номер карты вручную');
+    if(showOwnToast) showToast(ok ? 'Номер карты скопирован' : 'Скопируйте номер карты вручную');
     return ok;
   }
 
-  const ua = navigator.userAgent || '';
-  const isAndroid = /Android/i.test(ua);
-  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isMobile = isAndroid || isIOS || /Mobile/i.test(ua);
-
-  function openAndroidApp(){
-    // Chrome/Android: force the official Ozon Bank package when installed.
-    // If the app is absent or the browser blocks the intent, Ozon's official
-    // app link is used as a safe platform-aware fallback.
-    const fallback = encodeURIComponent(OZON_OFFICIAL_APP_LINK);
-    const intent = 'intent://finance.ozon.ru/#Intent;' +
-      'scheme=https;' +
-      'package=' + ANDROID_PACKAGE + ';' +
-      'S.browser_fallback_url=' + fallback + ';' +
-      'end';
-    window.location.href = intent;
-  }
-
-  function openIOSApp(){
-    // Ozon Bank does not publish a stable public iOS transfer deep-link.
-    // We first make a best-effort attempt to open the installed app via its
-    // app scheme. If the page remains visible, fall back to Ozon's own iOS link.
-    let leftPage = false;
-    let timer = null;
-
-    const cleanup = ()=>{
-      if(timer) clearTimeout(timer);
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pagehide', onPageHide);
-    };
-    const onVisibility = ()=>{
-      if(document.visibilityState === 'hidden'){
-        leftPage = true;
-        cleanup();
-      }
-    };
-    const onPageHide = ()=>{
-      leftPage = true;
-      cleanup();
-    };
-
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pagehide', onPageHide, {once:true});
-
-    // Hidden iframe avoids replacing the current page if the scheme is unsupported.
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.setAttribute('aria-hidden','true');
-    document.body.appendChild(iframe);
-    try{ iframe.src = IOS_SCHEME; }catch(e){}
-
-    timer = setTimeout(()=>{
-      iframe.remove();
-      cleanup();
-      if(!leftPage && document.visibilityState === 'visible'){
-        window.location.href = OZON_IOS_APP_LINK;
-      }
-    }, 1250);
-  }
-
-  function openOzonBank(){
+  function bankHref(){
     if(isAndroid){
-      openAndroidApp();
-      return;
+      // User gesture -> try Ozon Bank's package + custom scheme. If the app does not expose
+      // a BROWSABLE handler, Chrome immediately falls back to the official bank website.
+      const fallback = encodeURIComponent(BANK_WEB);
+      return 'intent://open/#Intent;scheme=' + BANK_CUSTOM_SCHEME + ';package=' + BANK_ANDROID_PACKAGE + ';S.browser_fallback_url=' + fallback + ';end';
     }
     if(isIOS){
-      openIOSApp();
-      return;
+      return BANK_CUSTOM_SCHEME + '://';
     }
-    // Desktop / laptop: open the official web version in a new tab.
-    window.open(BANK_WEB,'_blank','noopener,noreferrer');
+    return BANK_WEB;
   }
 
-  async function copyAndOpen(){
-    await copyCard();
+  function ozonHref(){
+    if(isAndroid){
+      // Ozon marketplace owns ozon.ru links, so this has a much better chance of opening
+      // the installed Ozon app. If it cannot, the browser opens ozon.ru.
+      const fallback = encodeURIComponent(OZON_WEB);
+      return 'intent://www.ozon.ru/#Intent;scheme=https;package=' + OZON_ANDROID_PACKAGE + ';S.browser_fallback_url=' + fallback + ';end';
+    }
+    // iOS Universal Link / desktop website.
+    return OZON_WEB;
+  }
+
+  function refreshOpenLinks(){
+    const bank = document.querySelector('[data-open-bank]');
+    const ozon = document.querySelector('[data-open-ozon]');
+    if(bank){
+      bank.setAttribute('href', bankHref());
+      if(isAndroid) bank.querySelector('[data-device-note]').textContent = 'приложение Ozon Bank';
+      else if(isIOS) bank.querySelector('[data-device-note]').textContent = 'приложение Ozon Bank';
+      else bank.querySelector('[data-device-note]').textContent = 'сайт Ozon Bank';
+    }
+    if(ozon){
+      ozon.setAttribute('href', ozonHref());
+      if(isAndroid || isIOS) ozon.querySelector('[data-device-note]').textContent = 'приложение Ozon';
+      else ozon.querySelector('[data-device-note]').textContent = 'сайт Ozon';
+    }
+  }
+
+  async function copyAndOpenChooser(){
+    // Do not show our own bottom toast here. Android itself may show its clipboard overlay.
+    // The chooser is intentionally raised toward the middle of the screen so they don't overlap.
+    await copyCard(false);
     if(modal) modal.classList.add('show');
   }
 
@@ -145,21 +117,29 @@
     });
   }
 
-  // Make the modal button text device-aware without changing the page layout.
-  document.querySelectorAll('[data-open-bank]').forEach(el=>{
-    if(isAndroid) el.textContent = 'Открыть Ozon Bank на Android';
-    else if(isIOS) el.textContent = 'Открыть Ozon Bank на iPhone';
-    else el.textContent = 'Открыть сайт Ozon Bank';
-    el.addEventListener('click', openOzonBank);
-  });
+  refreshOpenLinks();
 
-  document.querySelectorAll('[data-copy]').forEach(el=>el.addEventListener('click',copyCard));
-  document.querySelectorAll('[data-copy-open]').forEach(el=>el.addEventListener('click',copyAndOpen));
+  document.querySelectorAll('[data-copy]').forEach(el=>el.addEventListener('click',()=>copyCard(true)));
+  document.querySelectorAll('[data-copy-open]').forEach(el=>el.addEventListener('click',copyAndOpenChooser));
   document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',()=>modal && modal.classList.remove('show')));
   if(modal) modal.addEventListener('click',e=>{ if(e.target===modal) modal.classList.remove('show'); });
 
   document.querySelectorAll('[data-card-text]').forEach(el=>el.setAttribute('aria-label','Номер карты '+cardDigits));
   document.querySelectorAll('[data-recipient-text]').forEach(el=>el.setAttribute('aria-label','Получатель '+recipient));
+
+  // iOS: if the bank's private custom scheme is not registered, Safari/WebView can remain on the page.
+  // A small helper turns the Bank button into a normal official web fallback on the next tap.
+  const bankLink = document.querySelector('[data-open-bank]');
+  if(bankLink && isIOS){
+    bankLink.addEventListener('click',()=>{
+      let hidden = false;
+      const onVis = ()=>{ if(document.visibilityState==='hidden') hidden=true; };
+      document.addEventListener('visibilitychange',onVis,{once:true});
+      setTimeout(()=>{
+        if(!hidden && document.visibilityState==='visible') bankLink.setAttribute('href',BANK_WEB);
+      },1200);
+    });
+  }
 
   window.addEventListener('load',fitToViewport,{once:true});
   window.addEventListener('resize',fitToViewport);

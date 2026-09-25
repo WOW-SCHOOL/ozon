@@ -1,10 +1,12 @@
-Ozon Bank payment page — smart app opening
+Ozon payment page — Марина С
+Card: 2204 3201 4750 0435
 
-This build keeps the existing payment page and adds device-aware opening:
-- Android: attempts to open the installed Ozon Bank app (package ru.ozon.fintech.finance), with Ozon's official app link as fallback.
-- iPhone/iPad: best-effort app open, then Ozon's official iOS link as fallback.
-- Desktop/laptop: opens https://finance.ozon.ru/ in a new tab.
+Changes in this version:
+- Primary button text: «Скопировать номер карты и открыть Ozon Bank».
+- The chooser is raised higher so Android's native clipboard message does not cover it.
+- Two app choices after copying: Ozon Bank and Ozon.
+- Ozon Bank no longer falls back to the app-install landing page; it falls back to finance.ozon.ru.
+- Ozon uses the official ozon.ru App Link / Android package to open the installed Ozon app where supported.
+- Responsive one-screen layout is preserved.
 
-The card number is copied before the user proceeds, so it can be pasted into “Перевод по номеру карты”.
-
-Upload the contents of this archive directly into the corresponding GitHub Pages folder, replacing the old files.
+Replace the contents of the existing GitHub Pages recipient folder with the files from this archive.

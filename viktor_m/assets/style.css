@@ -39,62 +39,31 @@ h1 span{color:var(--ozon);white-space:nowrap}
 .warn p{margin:0;font-size:13px;line-height:1.3}
 .warn strong{font-weight:950}
 .footer{padding:8px 8px 0;color:#6e7c95;font-size:11.5px;line-height:1.35;text-align:center;font-weight:600}
-.toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translate(-50%,16px);background:#061532;color:white;padding:11px 15px;border-radius:13px;font-weight:850;font-size:13px;opacity:0;pointer-events:none;transition:.2s ease;box-shadow:0 12px 35px rgba(0,0,0,.25);z-index:99;white-space:nowrap}
+
+/* Our own toast is deliberately placed high. Android itself can show its own clipboard toast near the bottom. */
+.toast{position:fixed;left:50%;top:max(18px,env(safe-area-inset-top));transform:translate(-50%,-16px);background:#061532;color:white;padding:11px 15px;border-radius:13px;font-weight:850;font-size:13px;opacity:0;pointer-events:none;transition:.2s ease;box-shadow:0 12px 35px rgba(0,0,0,.25);z-index:120;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-.modal{position:fixed;inset:0;background:rgba(4,13,35,.46);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));z-index:90}
+
+.modal{position:fixed;inset:0;background:rgba(4,13,35,.46);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:max(18px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(115px,calc(env(safe-area-inset-bottom) + 95px)) max(14px,env(safe-area-inset-left));z-index:100}
 .modal.show{display:flex}
-.sheet{width:min(100%,620px);background:#fff;border-radius:24px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.3)}
-.sheet h2{margin:0 0 6px;font-size:21px}.sheet p{margin:0 0 11px;color:#5e6a80;line-height:1.38;font-size:14px}.sheet .actions{display:grid;gap:8px}.sheet button,.sheet a{display:block;text-align:center;text-decoration:none;border:0;border-radius:15px;padding:13px;font-weight:900;font-size:15px;cursor:pointer}.sheet .open{background:#1268ff;color:white}.sheet .close{background:#eef5ff;color:#145ccf}
+.sheet{width:min(100%,560px);background:#fff;border-radius:26px;padding:20px;box-shadow:0 30px 70px rgba(0,0,0,.3);transform:translateY(-2vh)}
+.sheet h2{margin:0 0 6px;font-size:23px}.sheet p{margin:0 0 14px;color:#5e6a80;line-height:1.38;font-size:14px}.sheet .actions{display:grid;gap:9px}
+.sheet button,.sheet a{width:100%;display:flex;align-items:center;justify-content:center;gap:11px;text-align:center;text-decoration:none;border:0;border-radius:16px;padding:12px 14px;font-weight:900;font-size:15px;cursor:pointer;min-height:52px;-webkit-tap-highlight-color:transparent}
+.sheet .open-bank{background:#1268ff;color:#fff;box-shadow:0 9px 22px rgba(18,104,255,.20)}
+.sheet .open-ozon{background:#eef5ff;color:#0d5cdf;border:1px solid #cfe2ff}
+.sheet .close{background:#f3f5f9;color:#5c6880}
+.app-logo{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;overflow:hidden;box-shadow:0 3px 10px rgba(9,46,123,.10)}
+.app-logo img{width:100%;height:100%;display:block}
+.app-copy{display:flex;flex-direction:column;align-items:flex-start;line-height:1.08;text-align:left}
+.app-copy small{font-size:10.5px;font-weight:750;opacity:.72;margin-top:3px}
 
-/* Desktop / laptop: wider card, lower vertical footprint. */
 @media (min-width:700px){
-  body{padding-top:12px;padding-bottom:12px}
-  .wrap{width:min(94vw,760px)}
-  .brand{margin-bottom:7px}
-  .hero{padding:18px 24px 17px}
-  h1{font-size:44px}
-  .card{padding:15px 20px 14px}
-  .cardno{font-size:31px}
-  .recipient{font-size:26px}
-  .hint{font-size:12px}
-  .warn p{font-size:12.5px}
+  body{padding-top:12px;padding-bottom:12px}.wrap{width:min(94vw,760px)}.brand{margin-bottom:7px}.hero{padding:18px 24px 17px}h1{font-size:44px}.card{padding:15px 20px 14px}.cardno{font-size:31px}.recipient{font-size:26px}.hint{font-size:12px}.warn p{font-size:12.5px}
 }
-
-/* Phones: keep the layout clean and tappable without horizontal overflow. */
 @media (max-width:520px){
-  body{padding:8px}
-  .wrap{width:100%}
-  .brand{margin:0 3px 7px}
-  .brand .title{font-size:11px}.logo{font-size:22px}
-  .hero{border-radius:22px;padding:17px 16px 16px}
-  h1{font-size:clamp(28px,9.2vw,37px);line-height:.99}
-  h1 span{white-space:normal}
-  .zero{margin-top:11px;padding:7px 12px;font-size:16px;border-radius:15px}
-  .zero .check{width:24px;height:24px;font-size:17px}
-  .card{margin-top:9px;border-radius:21px;padding:14px 14px 13px}
-  .label{font-size:12px}.cardno{font-size:clamp(21px,7vw,28px)}
-  .copy-mini{width:42px;height:42px;flex-basis:42px}
-  .divider{margin:11px 0}.recipient{font-size:24px}
-  .primary{margin-top:10px;padding:13px 12px;font-size:15.5px;border-radius:15px}
-  .secondary{padding:11px 12px;font-size:14px;border-radius:15px}
-  .hint{font-size:11.5px;margin-top:8px;line-height:1.3}
-  .warn{margin-top:9px;padding:10px 11px;border-radius:18px;gap:9px}
-  .warn .icon{flex-basis:35px;width:35px;height:35px;font-size:23px;border-radius:12px}
-  .warn p{font-size:11.5px;line-height:1.28}
-  .footer{font-size:10.5px;padding-top:6px}
+  body{padding:8px}.wrap{width:100%}.brand{margin:0 3px 7px}.brand .title{font-size:11px}.logo{font-size:22px}.hero{border-radius:22px;padding:17px 16px 16px}h1{font-size:clamp(28px,9.2vw,37px);line-height:.99}h1 span{white-space:normal}.zero{margin-top:11px;padding:7px 12px;font-size:16px;border-radius:15px}.zero .check{width:24px;height:24px;font-size:17px}.card{margin-top:9px;border-radius:21px;padding:14px 14px 13px}.label{font-size:12px}.cardno{font-size:clamp(21px,7vw,28px)}.copy-mini{width:42px;height:42px;flex-basis:42px}.divider{margin:11px 0}.recipient{font-size:24px}.primary{margin-top:10px;padding:13px 12px;font-size:15.5px;border-radius:15px}.secondary{padding:11px 12px;font-size:14px;border-radius:15px}.hint{font-size:11.5px;margin-top:8px;line-height:1.3}.warn{margin-top:9px;padding:10px 11px;border-radius:18px;gap:9px}.warn .icon{flex-basis:35px;width:35px;height:35px;font-size:23px;border-radius:12px}.warn p{font-size:11.5px;line-height:1.28}.footer{font-size:10.5px;padding-top:6px}
+  .modal{padding:16px 12px max(120px,calc(env(safe-area-inset-bottom) + 100px));align-items:center}.sheet{border-radius:24px;padding:18px 16px;transform:translateY(-5vh)}.sheet h2{font-size:22px}.sheet p{font-size:13.5px}.sheet button,.sheet a{min-height:54px;font-size:14.5px}.app-logo{width:38px;height:38px;flex-basis:38px}
 }
-
-@media (max-width:360px){
-  h1{font-size:27px}.cardno{font-size:20px}.primary{font-size:14.5px}.secondary{font-size:13.5px}.hint{font-size:11px}
-}
-
-/* Very short screens: compact vertically before JS applies any final fit scaling. */
-@media (max-height:760px){
-  .brand{margin-bottom:5px}.logo{font-size:21px}
-  .hero{padding-top:14px;padding-bottom:13px}.zero{margin-top:9px}
-  .card{margin-top:8px;padding-top:12px;padding-bottom:11px}.divider{margin:9px 0}
-  .primary{margin-top:8px;padding-top:11px;padding-bottom:11px}.secondary{padding-top:9px;padding-bottom:9px}
-  .hint{margin-top:7px}.warn{margin-top:7px;padding-top:8px;padding-bottom:8px}.footer{padding-top:5px}
-}
-
+@media (max-width:360px){h1{font-size:27px}.cardno{font-size:20px}.primary{font-size:14.5px}.secondary{font-size:13.5px}.hint{font-size:11px}.sheet{padding:16px 14px}.sheet button,.sheet a{font-size:13.8px;gap:8px}}
+@media (max-height:760px){.brand{margin-bottom:5px}.logo{font-size:21px}.hero{padding-top:14px;padding-bottom:13px}.zero{margin-top:9px}.card{margin-top:8px;padding-top:12px;padding-bottom:11px}.divider{margin:9px 0}.primary{margin-top:8px;padding-top:11px;padding-bottom:11px}.secondary{padding-top:9px;padding-bottom:9px}.hint{margin-top:7px}.warn{margin-top:7px;padding-top:8px;padding-bottom:8px}.footer{padding-top:5px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
