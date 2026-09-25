@@ -1,14 +1,10 @@
-Готовая отдельная адаптивная страница оплаты Ozon Bank.
+Ozon Bank payment page — smart app opening
 
-Главная и единственная страница — index.html.
-Оптимизирована под компьютеры, планшеты и телефоны; интерфейс автоматически компактно масштабируется по высоте экрана, чтобы по возможности помещаться без прокрутки.
+This build keeps the existing payment page and adds device-aware opening:
+- Android: attempts to open the installed Ozon Bank app (package ru.ozon.fintech.finance), with Ozon's official app link as fallback.
+- iPhone/iPad: best-effort app open, then Ozon's official iOS link as fallback.
+- Desktop/laptop: opens https://finance.ozon.ru/ in a new tab.
 
-Кнопка «Скопировать номер и открыть Ozon Bank»:
-— копирует номер карты без пробелов;
-— на Android пытается открыть официальное приложение Ozon Bank по package ru.ozon.fintech.finance;
-— на iPhone/iPad открывает официальный адрес finance.ozon.ru как безопасный Universal Link / fallback, поскольку Ozon Bank публично не документирует стабильный deep-link прямо на экран перевода по номеру карты.
+The card number is copied before the user proceeds, so it can be pasted into “Перевод по номеру карты”.
 
-Структура:
-index.html
-assets/style.css
-assets/app.js
+Upload the contents of this archive directly into the corresponding GitHub Pages folder, replacing the old files.

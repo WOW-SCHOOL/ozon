@@ -7,6 +7,14 @@
   const toast = document.getElementById('toast');
   const modal = document.getElementById('modal');
 
+  // Official destinations / fallbacks.
+  // Android package confirmed for the Ozon Bank app.
+  const ANDROID_PACKAGE = 'ru.ozon.fintech.finance';
+  const BANK_WEB = 'https://finance.ozon.ru/';
+  const OZON_OFFICIAL_APP_LINK = 'https://s.ozon.ru/4KjFvD6';
+  const OZON_IOS_APP_LINK = 'https://s.ozon.ru/Uy5zkHT';
+  const IOS_SCHEME = 'ozonbank://'; // best-effort; fallback below is always available
+
   function showToast(msg){
     if(!toast) return;
     toast.textContent = msg;
@@ -27,9 +35,12 @@
       const ta = document.createElement('textarea');
       ta.value = cardDigits;
       ta.setAttribute('readonly','');
-      ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.opacity='0';
+      ta.style.position='fixed';
+      ta.style.left='-9999px';
+      ta.style.opacity='0';
       document.body.appendChild(ta);
-      ta.focus(); ta.select();
+      ta.focus();
+      ta.select();
       try{ ok = document.execCommand('copy'); }catch(e){}
       ta.remove();
     }
@@ -40,23 +51,74 @@
   const ua = navigator.userAgent || '';
   const isAndroid = /Android/i.test(ua);
   const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isMobile = isAndroid || isIOS || /Mobile/i.test(ua);
+
+  function openAndroidApp(){
+    // Chrome/Android: force the official Ozon Bank package when installed.
+    // If the app is absent or the browser blocks the intent, Ozon's official
+    // app link is used as a safe platform-aware fallback.
+    const fallback = encodeURIComponent(OZON_OFFICIAL_APP_LINK);
+    const intent = 'intent://finance.ozon.ru/#Intent;' +
+      'scheme=https;' +
+      'package=' + ANDROID_PACKAGE + ';' +
+      'S.browser_fallback_url=' + fallback + ';' +
+      'end';
+    window.location.href = intent;
+  }
+
+  function openIOSApp(){
+    // Ozon Bank does not publish a stable public iOS transfer deep-link.
+    // We first make a best-effort attempt to open the installed app via its
+    // app scheme. If the page remains visible, fall back to Ozon's own iOS link.
+    let leftPage = false;
+    let timer = null;
+
+    const cleanup = ()=>{
+      if(timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+    const onVisibility = ()=>{
+      if(document.visibilityState === 'hidden'){
+        leftPage = true;
+        cleanup();
+      }
+    };
+    const onPageHide = ()=>{
+      leftPage = true;
+      cleanup();
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide, {once:true});
+
+    // Hidden iframe avoids replacing the current page if the scheme is unsupported.
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.setAttribute('aria-hidden','true');
+    document.body.appendChild(iframe);
+    try{ iframe.src = IOS_SCHEME; }catch(e){}
+
+    timer = setTimeout(()=>{
+      iframe.remove();
+      cleanup();
+      if(!leftPage && document.visibilityState === 'visible'){
+        window.location.href = OZON_IOS_APP_LINK;
+      }
+    }, 1250);
+  }
 
   function openOzonBank(){
-    const bankWeb = 'https://finance.ozon.ru/';
     if(isAndroid){
-      // Explicit Android intent to the official Ozon Bank package.
-      const fallback = encodeURIComponent(bankWeb);
-      window.location.href = 'intent://finance.ozon.ru/#Intent;scheme=https;package=ru.ozon.fintech.finance;S.browser_fallback_url=' + fallback + ';end';
+      openAndroidApp();
       return;
     }
     if(isIOS){
-      // Ozon Bank does not publish a stable card-transfer deep-link scheme for iOS.
-      // Opening its official HTTPS domain is the safest Universal-Link-compatible route;
-      // if the app does not claim the link, Safari opens the same official site.
-      window.location.href = bankWeb;
+      openIOSApp();
       return;
     }
-    window.open(bankWeb,'_blank','noopener');
+    // Desktop / laptop: open the official web version in a new tab.
+    window.open(BANK_WEB,'_blank','noopener,noreferrer');
   }
 
   async function copyAndOpen(){
@@ -67,7 +129,6 @@
   function fitToViewport(){
     if(!wrap) return;
     root.style.setProperty('--fit-scale','1');
-    // Wait until scale reset has taken effect before measuring.
     requestAnimationFrame(()=>{
       const vv = window.visualViewport;
       const vw = vv ? vv.width : window.innerWidth;
@@ -78,17 +139,22 @@
       const sx = usableW / rect.width;
       const sy = usableH / rect.height;
       const scale = Math.min(1, sx, sy);
-      // Only scale when necessary. Preserve legibility; on extremely small screens
-      // scrolling is preferable to shrinking below 78%.
       const finalScale = Math.max(0.78, scale);
       root.style.setProperty('--fit-scale', finalScale.toFixed(4));
       document.body.style.overflowY = scale >= 0.78 ? 'hidden' : 'auto';
     });
   }
 
+  // Make the modal button text device-aware without changing the page layout.
+  document.querySelectorAll('[data-open-bank]').forEach(el=>{
+    if(isAndroid) el.textContent = 'Открыть Ozon Bank на Android';
+    else if(isIOS) el.textContent = 'Открыть Ozon Bank на iPhone';
+    else el.textContent = 'Открыть сайт Ozon Bank';
+    el.addEventListener('click', openOzonBank);
+  });
+
   document.querySelectorAll('[data-copy]').forEach(el=>el.addEventListener('click',copyCard));
   document.querySelectorAll('[data-copy-open]').forEach(el=>el.addEventListener('click',copyAndOpen));
-  document.querySelectorAll('[data-open-bank]').forEach(el=>el.addEventListener('click',openOzonBank));
   document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',()=>modal && modal.classList.remove('show')));
   if(modal) modal.addEventListener('click',e=>{ if(e.target===modal) modal.classList.remove('show'); });
 
